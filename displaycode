@@ -511,19 +511,34 @@ const byte RX_PIN = 3;
 
 SoftwareSerial Soft_Serial(RX_PIN, TX_PIN);
 
-// Define a struct for your data
-struct CommunicationData {
-  byte start;
-  byte zone_id;
-  byte total_sensor;
-  byte sensor_status_1;
-  byte sensor_status_2;
-  byte total_engaged;
-  byte total_disengaged;
-  byte total_vacancy;
-  byte total_error;
-  byte end;
+byte arrow1[] = {
+  B00000000, B00000000, B00000000, B00000000,
+  B00000000, B00000000, B00000000, B00000000,
+  B00000000, B00000001, B00000000, B00000000,
+  B00000000, B00000011, B00000000, B00000000,
+  B00000000, B00000111, B00000000, B00000000,
+  B00000000, B00001111, B00000000, B00000000,
+  B00000000, B00011111, B11111111, B11100000,
+  B00000000, B00111111, B11111111, B11100000,
+  B00000000, B01111111, B11111111, B11100000,
+  B00000000, B01111111, B11111111, B11100000,
+  B00000000, B00111111, B00000000, B00000000,
+  B00000000, B00011111, B00000000, B00000000,
+  B00000000, B00001111, B00000000, B00000000,
+  B00000000, B00000111, B00000000, B00000000,
+  B00000000, B00000011, B00000000, B00000000
 };
+
+bool displayArrow = true;
+
+void toggleDisplay() {
+  displayArrow = !displayArrow;
+}
+
+void show_text(const char* text, int length, int startColumn) {
+  dmd.selectFont(Arial_Black_16);
+  dmd.drawString(startColumn, 0, text, length, GRAPHICS_NORMAL);
+}
 
 void ScanDMD() {
   dmd.scanDisplayBySPI();
@@ -539,33 +554,42 @@ void setup() {
 }
 
 void loop() {
-  const int bufferSize = 20; // Adjust buffer size as needed
-  char buffer[bufferSize];
-
   if (Soft_Serial.available() > 0) {
-    int bytesRead = Soft_Serial.readBytesUntil('\n', buffer, bufferSize);
+    char buffer[20];
+    int bytesRead = Soft_Serial.readBytesUntil('\n', buffer, sizeof(buffer));
 
-    byte hexData[bytesRead / 2];
-    for (int i = 0; i < bytesRead / 2; i++) {
-      hexData[i] = strtol(&buffer[i * 2], NULL, 16);
-    }
-
-    if (hexData[0] == 0xAA && hexData[bytesRead / 2 - 1] == 0x55) {
-      // Convert the total vacancy byte to ASCII characters
-      char vacancyChar = hexData[7] + '0';
-      show_text(&vacancyChar, 1);
+    Serial.print("Received raw data: ");
+    Serial.println(buffer);
+    // Check if the start and end bytes are correct
+    if (buffer[0] == 'A' && buffer[1] == 'A' && buffer[bytesRead - 2] == '5' && buffer[bytesRead - 1] == '5') {
+      // Extract the vacancy byte
+      char vacancyCharHigh = buffer[14]; // Extract the high digit
+      char vacancyCharLow = buffer[15];  // Extract the low digit
+      int vacancyHigh = vacancyCharHigh - '0';
+      int vacancyLow = vacancyCharLow - '0';
+      int vacancy = vacancyHigh * 10 + vacancyLow;
       Serial.print("Vacancy: ");
-      Serial.println(vacancyChar);
-    }
-  }
+      Serial.println(vacancy);
 
-  delay(2000);
-  dmd.clearScreen(true);
+      // Clear the screen before displaying anything
+      dmd.clearScreen(true);
+
+if (displayArrow) {
+  // Adjust the coordinates to position the arrow as needed
+  dmd.drawString(10, 8, reinterpret_cast<const char*>(arrow1), 15, GRAPHICS_NORMAL);
 }
 
-void show_text(const char* text, int length) {
-  dmd.clearScreen(true);
-  dmd.selectFont(Arial_Black_16);
-  dmd.drawString(0, 0, text, length, GRAPHICS_NORMAL);
+      // Display the vacancy data on the right half of the screen
+      show_text(String(vacancy).c_str(), strlen(String(vacancy).c_str()), 16);
+
+      // Update the display
+      dmd.scanDisplayBySPI();
+
+      // Delay before toggling the display
+      delay(2000);
+      toggleDisplay(); // Toggle the display state
+    }
+    memset(buffer, 0, sizeof(buffer)); // Clear the buffer
+  }
 }
 */
