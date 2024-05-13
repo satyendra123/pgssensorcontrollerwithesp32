@@ -102,7 +102,7 @@ void show_text(const char* text)
 
 
 /*
-//EXAMPLE-2 extract the protocol and print the data into the p10 display
+//EXAMPLE-3 extract the protocol and print the data into the p10 display
 #include <SPI.h>       
 #include <DMD.h>       // use SPI bus 
 #include <TimerOne.h>
@@ -179,7 +179,7 @@ void show_text(const char* text) {
 }
 */
 /*
-//EXAMPLE-3 this code works and extract the vacancy data and display the data in the serial monitor. with the protocol which i have made in esp32 for combi sensors
+//EXAMPLE-4 this code works and extract the vacancy data and display the data in the serial monitor. with the protocol which i have made in esp32 for combi sensors
 #include <SPI.h>
 #include <DMD.h>
 #include <TimerOne.h>
@@ -258,7 +258,7 @@ void show_text(const char* text, int length) {
 */
 
 /*
-//EXAMPLE-4 in this code i will send the protocol data by the docklight software. it will receive the data from the docklight and after that extract the vacancy data and prints it on the serial monitor. when i 
+//EXAMPLE-5 in this code i will send the protocol data by the docklight software. it will receive the data from the docklight and after that extract the vacancy data and prints it on the serial monitor. when i 
 // send the hex data from the rs485tousb then it receives the data and prints on the serial monitor. i send the hex data from the docklight.
 #include <SoftwareSerial.h>
 #include <SPI.h>
@@ -329,7 +329,7 @@ void show_text(const char* text, int length) {
   dmd.drawString(0, 0, text, length, GRAPHICS_NORMAL);
 }
 */
-/* EXAMPLE-3 i am sending the ascii characters a a 0 1 0 2 0 1 0 1 0 2 0 1 0 1 0 1 5 5 like this and also receiving the data in the arduino serial monitor
+/* EXAMPLE-6 i am sending the ascii characters a a 0 1 0 2 0 1 0 1 0 2 0 1 0 1 0 1 5 5 like this and also receiving the data in the arduino serial monitor
 #include <SoftwareSerial.h>
 #include <SPI.h>
 #include <DMD.h>
@@ -409,7 +409,7 @@ void show_text(const char* text, int length) {
   dmd.drawString(0, 0, text, length, GRAPHICS_NORMAL);
 }
 */
-
+//EXAMPLE-7 this is live getting the ascii data from the esp32 and print the vacancy in the serial monitor AA010201010200000055<CR><LF> this is coming. i am receiving it and process it and calculate the vacancy on the serial monitor. this is live and working
 #include <SoftwareSerial.h>
 #include <SPI.h>
 #include <DMD.h>
