@@ -494,7 +494,7 @@ void show_text(const char* text, int length) {
 
 
 /*
-// EXAMPLE-6 in this i am sending the ascii data in bytes likes b'\xaa\x01\x03\x02\x01\x03\x01\x01\x01\x00U' 
+// EXAMPLE-8 in this i am sending the ascii data in bytes likes b'\xaa\x01\x03\x02\x01\x03\x01\x01\x01\x00U' 
 
 #include <SoftwareSerial.h>
 #include <SPI.h>
