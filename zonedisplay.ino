@@ -1,3 +1,4 @@
+//EXAMPLE-1 in this we are only showing the vacancy data. in this we are not showing the arrow sign. and we are doing this for displaying the dmd library
 #include <SoftwareSerial.h>
 #include <SPI.h>
 #include <DMD.h>
