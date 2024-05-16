@@ -167,7 +167,7 @@ while True:
     process_sensor_requests()
 
 '''
-#EXAMPLE-3 
+#EXAMPLE-3 this is working zone data. the zone controller will request by sending the protocol and capture the response. after capturing the response it will then extract the status data and send it to the floor controller and the display
 #from I2C_LCD import I2cLcd
 from machine import UART, Pin
 import time
