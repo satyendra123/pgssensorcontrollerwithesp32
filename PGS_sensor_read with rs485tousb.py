@@ -118,109 +118,123 @@ finally:
     ser.close()  # Close the serial port when finished
 '''
 
-import machine
+from machine import UART
 import time
+
+uart = UART(2, baudrate=9600, tx=3, rx=1)
+uart1 = UART(1, baudrate=9600, tx=16, rx=17)
+uart0 = UART(0, baudrate=9600, tx=25, rx=26)
+
+uart0.init()
+sensor_requests = ['FA0101F9', 'FA0201FA', 'FA0301FB']
+sensor_status = []
+zone_id = '01'  # Convert zone_id to a byte
+
+def calculate_sensor_status(response):
+    status_byte = response[2:3]
+    if status_byte == b'\x01':
+        return 1  # Engaged
+    elif status_byte == b'\x02':
+        return 2  # Disengaged
+    elif status_byte == b'\x03':
+        return 3  # Error
+    else:
+        return -1  # Invalid status
+
+def process_sensor_requests():
+    global sensor_status
+    sensor_status = []
+    for request in sensor_requests:
+        if request.startswith('FA'):
+            uart.write(bytes.fromhex(request))
+            time.sleep(2)
+            response = uart.read()
+            if response and response[0:1] == b'\xF5':
+                sensor_status.append(calculate_sensor_status(response))
+
+    # Construct message
+    total_sensors = len(sensor_status)
+    total_engaged = sensor_status.count(1)
+    total_disengaged = sensor_status.count(2)
+    total_errors = sensor_status.count(3)
+    total_vacancy = total_disengaged
+    message = bytearray([0xAA, int(zone_id), total_sensors] + sensor_status + [total_engaged, total_disengaged, total_vacancy, total_errors, 0x55])
+    uart1.write(message)
+    uart0.write(message)
+
+# Listen for slave ID from the floor controller
+while True:
+    process_sensor_requests()
+
+'''
+#EXAMPLE-3 
+#from I2C_LCD import I2cLcd
 from machine import UART, Pin
-from lcd_api import LcdApi
-from pico_i2c_lcd import I2cLcd
+import time
 
-# Reassign GPIO9 and GPIO10 for UART1
-machine.UART(1).init(baudrate=9600, rx=9, tx=10)
+#DEFAULT_I2C_ADDR = 0x27
+#i2c_lcd = I2C(scl=Pin(14), sda=Pin(13), freq=400000)
+#lcd = I2cLcd(i2c_lcd, DEFAULT_I2C_ADDR, 2, 16)
 
-# Define RS485 port settings
-rs485_port_sensor = UART(1, baudrate=9600)  # UART1 for sensor
-rs485_port_output = UART(2, baudrate=9600)  # UART2 for output
-rs485_port_vacancy = UART(0, baudrate=9600)  # UART0 for vacancy status
+# Initialize UARTs
+#uart2 = UART(2, baudrate=9600, tx=Pin(25), rx=Pin(26))
+uart2 = UART(2, baudrate=9600, tx=Pin(33), rx=Pin(32))
+uart1 = UART(1, baudrate=9600, tx=Pin(16), rx=Pin(17))
+# Disable REPL on UART0
+uart = UART(0,9600,tx=Pin(3), rx=Pin(1))
+uart.init(9600, bits=8, parity=None, stop=1)
 
-# Define the zone address and total sensors
-zone_address = 0x01  # Change this to the actual zone address
-total_sensors = 5  # Change this value based on the actual number of sensors in the zone
+sensor_requests = ['FA0101F9', 'FA0201FA', 'FA0301FB']
+zone_id = '01'  # Convert zone_id to a byte
 
-# I2C LCD settings
-i2c = machine.I2C(0, scl=machine.Pin(19), sda=machine.Pin(18), freq=400000)  # Update pins as per your ESP32 board
-lcd = I2cLcd(i2c, 0x27, 2, 16)  # I2C address, number of rows, number of columns
+def calculate_sensor_status(response):
+    status_byte = response[2:3]
+    if status_byte == b'\x01':
+        return 1  # Engaged
+    elif status_byte == b'\x02':
+        return 2  # Disengaged
+    elif status_byte == b'\x03':
+        return 3  # Error
+    else:
+        return -1  # Invalid status
 
-try:
-    # Initialize variables to count sensor statuses
-    total_engaged = 0
-    total_disengaged = 0
-    total_working_sensors = 0
-    total_faulty_sensors = 0
+def process_sensor_requests():
+    sensor_status = []
+    
+    for request in sensor_requests:
+        if request.startswith('FA'):
+            uart1.write(bytes.fromhex(request))
+            time.sleep(2)
+            response = uart1.read()
+            if response and response[0:1] == b'\xF5':
+                sensor_status.append(calculate_sensor_status(response))
 
-    # Create requests for 5 sensors (adjust as needed)
-    sensor_requests = [
-        bytes.fromhex('00 00 00 01 01 E4 50'),  # Sensor 0 request
-        bytes.fromhex('00 01 00 01 01 E5 AC'),  # Sensor 1 request
-        bytes.fromhex('00 02 00 01 01 E5 E8'),  # Sensor 2 request
-        bytes.fromhex('00 03 00 01 01 E4 14'),  # Sensor 3 request
-        bytes.fromhex('00 04 00 01 01 E5 60')   # Sensor 4 request
-    ]
+    # Construct message
+    total_sensors = len(sensor_status)
+    total_engaged = sensor_status.count(1)
+    total_disengaged = sensor_status.count(2)
+    total_errors = sensor_status.count(3)
+    total_vacancy = total_disengaged
+    message = bytearray([0xAA, int(zone_id), total_sensors] + sensor_status + [total_engaged, total_disengaged, total_vacancy, total_errors, 0x55])
+    
+    # Write message to UART2 (pins 3, 1) and UART0 (pins 25, 26)
+    uart2.write(message)
+    #print(message)
+    hex_message = ''.join('{:02x}'.format(byte) for byte in message)
+    print(hex_message.upper())
 
-    # Initialize list to store sensor data
-    sensor_data = []
 
-    # Send requests for each sensor
-    for index, request in enumerate(sensor_requests, start=0):
-        rs485_port_sensor.write(request)
-        print(f"Sent sensor {index} request:", request)
 
-        # Wait for a response (adjust this based on your device response time)
-        time.sleep(0.1)
+# Main loop
+while True:
+    process_sensor_requests()
+    
+    '''
+       lcd.clear()
+       lcd.move_to(0, 0)
+       lcd.putstr("DATA")
+       lcd.move_to(0, 1)
+       lcd.putstr("RECEIVED!")
+    '''
 
-        # Read response
-        response = rs485_port_sensor.read(7)  # Assuming response is 7 bytes long
-        if response:
-            # Extract the 6th byte from the response
-            sixth_byte = response[5]  # MicroPython uses 0-based indexing
 
-            # Check sensor status and update variables
-            if sixth_byte == 0x00:  # Engaged
-                sensor_data.append(0x01)
-                total_engaged += 1
-                total_working_sensors += 1
-            elif sixth_byte == 0x01:  # Disengaged
-                sensor_data.append(0x00)
-                total_disengaged += 1
-                total_working_sensors += 1
-            else:  # Assume faulty or no communication
-                sensor_data.append(0x02)  # Assume faulty
-                total_faulty_sensors += 1
-
-            print(f"Received response for sensor {index}: Sensor status {sixth_byte}")
-        else:
-            print(f"No response received for sensor {index}. Assuming sensor is faulty.")
-            sensor_data.append(0x02)  # Assume faulty
-            total_faulty_sensors += 1
-
-    # Construct the message to send to the floor controller
-    message = bytearray([
-        0xAA,  # Zone head
-        zone_address,  # Zone address
-        total_sensors,  # Total sensors
-    ])
-    message.extend(sensor_data)  # Sensor data for each sensor
-    message.extend([
-        total_engaged,  # Total engaged sensors
-        total_disengaged,  # Total disengaged sensors
-        total_working_sensors,  # Total working sensors
-        total_faulty_sensors,  # Total faulty sensors
-        0x55  # End of communication
-    ])
-
-    # Send the message to the floor controller
-    rs485_port_output.write(message)
-
-    # Send vacancy status through UART
-    vacancy_status = total_sensors - total_engaged - total_disengaged
-    rs485_port_vacancy.write(bytes([vacancy_status]))
-
-    # Display data on the LCD
-    lcd.putstr("TS: {}\n".format(total_sensors))
-    lcd.putstr("TD: {}\n".format(total_working_sensors))
-    lcd.putstr("ES: {}\n".format(total_engaged))
-    lcd.putstr("VS: {}\n".format(total_disengaged))
-    lcd.putstr("N: {}\n".format(total_faulty_sensors))
-    lcd.putstr("DS: {}\n".format(total_disengaged))
-
-except Exception as e:
-    print("Error:", e)
