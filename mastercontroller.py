@@ -21,7 +21,7 @@ def collect_data_from_slave(slave_id):
             byte = uart1.read(1)
             response.extend(byte)
             # Check for end of frame marker
-            if len(response) >= 2 and response[-2:] == b'\xDE\xE9':
+            if len(response) >= 2 and response[:1] == b'\xDE' and response[-1:] == b'\xE9':
                 break
         if time.time() - start_time > 5:
             print("Timeout waiting for response from Slave", slave_id.hex())
@@ -29,11 +29,8 @@ def collect_data_from_slave(slave_id):
 
     if response:
         print("Raw response from Slave", slave_id.hex(), ":", response.hex())
-        if len(response) >= 2 and response[-2:] == b'\xDE\xE9':
-            print("Valid response from Slave", slave_id.hex(), ":", response.hex())
-            return response[:-2]  # Remove the end of frame marker
-        else:
-            print("Invalid or incomplete response from Slave", slave_id.hex(), ":", response.hex())
+        print("Valid response from Slave", slave_id.hex(), ":", response.hex())
+        return response[:-2]  # Remove the end of frame marker
     else:
         print("No response from Slave", slave_id.hex())
 
@@ -73,4 +70,3 @@ def collect_data_from_slaves():
 while True:
     collect_data_from_slaves()
     time.sleep(10)
-
