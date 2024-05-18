@@ -21,7 +21,7 @@ def collect_data_from_slave(slave_id):
             byte = uart1.read(1)
             response.extend(byte)
             # Check for end of frame marker
-            if len(response) >= 2 and response[:1] == b'\xDE' and response[-1:] == b'\xE9':
+            if response[:1] == b'\xDE' and response[-1:] == b'\xE9':
                 break
         if time.time() - start_time > 5:
             print("Timeout waiting for response from Slave", slave_id.hex())
