@@ -310,3 +310,18 @@ void show_arrow(const byte* arrow) {
   display.drawBitmap(20, 2, arrow); // Draw arrow at the left side
   display.refresh(); // Refresh the display after drawing arrow
 }
+/* you can use this function to display the animation in the arrow p10 display board
+int arrowPos = 0; // Initial position of the arrow
+
+void show_arrow(const byte* arrow) {
+  display.clear(); // Clear the display buffer before drawing the arrow
+  display.drawBitmap(20 + arrowPos, 2, arrow); // Draw arrow at the adjusted position
+  display.refresh(); // Refresh the display after drawing arrow
+  arrowPos++; // Increment the position for the next frame
+  if (arrowPos >= 10) {
+    arrowPos = 0; // Reset the position to restart the animation
+  }
+}
+
+
+*/
