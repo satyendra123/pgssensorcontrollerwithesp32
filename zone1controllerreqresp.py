@@ -184,8 +184,9 @@ def process_sensor_requests():
 
     # Write message to UART2
     uart2.write(message)
-    hex_message = ''.join('{:02x}'.format(byte) for byte in message)
-    print(hex_message.upper())
+    display = bytearray([0xDD, int.from_bytes(zone_id, "little"), total_vacancy, 0xFF])
+    hex_display = ''.join('{:02x}'.format(byte) for byte in display)
+    print(hex_display.upper())
 
 # Listen for slave ID from the floor controller
 while True:
