@@ -43,8 +43,9 @@ def process_sensor_requests():
     total_vacancy = total_disengaged
     message = bytearray([0xAA, int.from_bytes(zone_id, "little"), total_sensors] + sensor_status + [total_engaged, total_disengaged, total_vacancy, total_errors, 0x55])
     uart2.write(message)
-    hex_message = ''.join('{:02x}'.format(byte) for byte in message)
-    print(hex_message.upper())
+    display = bytearray([0xDD, int.from_bytes(zone_id, "little"), total_vacancy, 0xFF])
+    hex_display = ''.join('{:02x}'.format(byte) for byte in display)
+    print(hex_display.upper())
 
 # Listen for slave ID from the floor controller
 while True:
@@ -109,9 +110,9 @@ def process_sensor_requests():
     
     # Write message to UART2 (pins 3, 1) and UART0 (pins 25, 26)
     uart2.write(message)
-    #print(message)
-    hex_message = ''.join('{:02x}'.format(byte) for byte in message)
-    print(hex_message.upper())
+    display = bytearray([0xDD, int.from_bytes(zone_id, "little"), total_vacancy, 0xFF])
+    hex_display = ''.join('{:02x}'.format(byte) for byte in display)
+    print(hex_display.upper())
 
 # Main loop
 while True:
