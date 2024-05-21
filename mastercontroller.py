@@ -8,7 +8,7 @@ uart2 = UART(2, baudrate=9600, tx=Pin(33), rx=Pin(32), timeout=2000)
 
 # Slave IDs and number of zones
 slave_ids = [b'\x01', b'\x02', b'\x03']
-num_floors = len(slave_ids)
+num_zones = len(slave_ids)
 
 # Function to clear UART buffer
 def clear_uart_buffer(uart):
@@ -64,7 +64,7 @@ def collect_data_from_slaves():
         clear_uart_buffer(uart1)
 
     # Build the final message
-    message = bytearray([0xF4, 0x01, num_floors])
+    message = bytearray([0xF4, 0x01, num_zones])
     for floor_data in all_floor_data:
         message.extend(floor_data)
 
@@ -83,7 +83,7 @@ while True:
     time.sleep(10)
 
 '''
-'''
+
 from machine import UART, Pin
 import time
 
@@ -93,7 +93,7 @@ uart2 = UART(2, baudrate=9600, tx=Pin(33), rx=Pin(32), timeout=2000)
 
 # Slave IDs and number of zones
 slave_ids = [b'\x01', b'\x02', b'\x03']
-num_floors = len(slave_ids)
+num_zones = len(slave_ids)
 
 # Function to clear UART buffer
 def clear_uart_buffer(uart):
@@ -149,7 +149,7 @@ def collect_data_from_slaves():
         clear_uart_buffer(uart1)
 
     # Build the final message
-    message = bytearray([0xF4, 0x01, num_floors])
+    message = bytearray([0xF4, 0x01, num_zones])
     for floor_data in all_floor_data:
         message.extend(floor_data)
 
@@ -166,6 +166,7 @@ def collect_data_from_slaves():
 while True:
     collect_data_from_slaves()
     time.sleep(10)
+
 '''
 from machine import UART, Pin
 
@@ -181,7 +182,7 @@ while True:
         if len(bytes_list) > 0:
             print(" ".join(bytes_list))
             bytes_list = []
-
+'''
 
 
 
