@@ -84,14 +84,13 @@ while True:
 
 '''
 
+
 from machine import UART, Pin
 import time
 
-# Initialize UARTs
-uart1 = UART(1, baudrate=9600, tx=Pin(16), rx=Pin(17), timeout=2000)
-uart2 = UART(2, baudrate=9600, tx=Pin(33), rx=Pin(32), timeout=2000)
+uart1 = UART(1, baudrate=9600, tx=Pin(16), rx=Pin(17))
+uart2 = UART(2, baudrate=9600, tx=Pin(33), rx=Pin(32))
 
-# Slave IDs and number of zones
 slave_ids = [b'\x01', b'\x02', b'\x03']
 num_zones = len(slave_ids)
 
@@ -101,9 +100,7 @@ def clear_uart_buffer(uart):
         uart.read(1)
 
 # Function to collect data from a single slave
-def collect_data_from_slave(slave_id):
-    clear_uart_buffer(uart1)
-
+def collect_data_from_slave():
     response = bytearray()
     start_time = time.time()
     while True:
@@ -114,16 +111,10 @@ def collect_data_from_slave(slave_id):
             if response[:1] == b'\xDE' and response[-1:] == b'\xE9':
                 break
         if time.time() - start_time > 10:
-            print("Timeout waiting for response from Slave", slave_id.hex())
             break
 
     if response:
-        print("Raw response from Slave", slave_id.hex(), ":", response.hex())
-        print("Valid response from Slave", slave_id.hex(), ":", response.hex())
         return response  # Return the complete response including end marker
-    else:
-        print("No response from Slave", slave_id.hex())
-
     return None
 
 # Function to collect and process data from all slaves
@@ -134,18 +125,17 @@ def collect_data_from_slaves():
     total_vacancy = 0
     total_errors = 0
 
-    for slave_id in slave_ids:
-        print("Collecting data from Slave", slave_id.hex())
-        response = collect_data_from_slave(slave_id)
-        time.sleep(2)
+    for _ in slave_ids:
+        response = collect_data_from_slave()
+        time.sleep(0.1)
         if response:
             all_floor_data.append(response)
-            if len(response) >= 10:
-                total_engaged += response[-5]
-                total_disengaged += response[-4]
-                total_vacancy += response[-3]
-                total_errors += response[-2]
-        
+            if len(response) >= 12:
+                total_engaged += response[-7]
+                total_disengaged += response[-6]
+                total_vacancy += response[-5]
+                total_errors += response[-4]
+
         clear_uart_buffer(uart1)
 
     # Build the final message
@@ -157,32 +147,11 @@ def collect_data_from_slaves():
     message.extend(total_data)
 
     hex_message_with_spaces = ' '.join('{:02x}'.format(byte) for byte in message)
-    print("Final Message with Spaces:", hex_message_with_spaces.upper())
-
     # Send the final message via uart2
     uart2.write(message)
+    print(message)
 
 # Main loop to collect data periodically
 while True:
     collect_data_from_slaves()
-    time.sleep(10)
-
-'''
-from machine import UART, Pin
-
-uart1 = UART(1, baudrate=9600, tx=Pin(16), rx=Pin(17), timeout=2000)
-uart2 = UART(2, baudrate=9600, tx=Pin(33), rx=Pin(32), timeout=2000)
-bytes_list = []
-while True:
-    if uart1.any():
-        data = uart1.read(1)
-        received_byte = int.from_bytes(data, 'big')
-        bytes_list.append("{:02X}".format(received_byte))
-    else:
-        if len(bytes_list) > 0:
-            print(" ".join(bytes_list))
-            bytes_list = []
-'''
-
-
-
+    time.sleep(1)
