@@ -166,6 +166,7 @@ uart2 = UART(2, baudrate=9600, tx=Pin(33), rx=Pin(32))
 # Define slave IDs
 slave_ids = [b'\x01', b'\x02', b'\x03']
 num_zones = len(slave_ids)
+floor_id = b'\x01'
 
 def crc16(data: bytearray) -> int:
     """Calculate the CRC-16 of a data bytearray."""
@@ -193,10 +194,16 @@ def clear_uart_buffer(uart):
     while uart.any():
         uart.read(1)
 
+def create_request(slave_id):
+    """Create a request packet for a given slave ID."""
+    request = bytearray([0xAA, slave_id[0], 0x80, 0xA0, 0x55])
+    return request
+
 def collect_data_from_slave(slave_id):
     """Collect data from a specified slave controller."""
     clear_uart_buffer(uart1)
-    uart1.write(slave_id)
+    request = create_request(slave_id)
+    uart1.write(request)
     print("Request sent to Slave", slave_id.hex())
     time.sleep(0.5)
 
@@ -255,5 +262,14 @@ def collect_data_from_slaves():
     uart2.write(message)
 
 while True:
-    collect_data_from_slaves()
-    time.sleep(10)
+    if uart2.any() >= 5:  # Check if there are at least 5 bytes available
+        request = uart2.read(5)
+        if request == bytearray([0xAA, floor_id[0], 0x80, 0xA0, 0x55]):
+            print("Valid request received from master:", request.hex())
+            collect_data_from_slaves()
+        else:
+            print("Invalid request received:", request.hex())
+    time.sleep(1)
+
+
+
