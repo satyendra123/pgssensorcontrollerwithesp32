@@ -718,3 +718,418 @@ void show_arrow(const byte* arrow) {
     frame = (frame + 1) % NUM_FRAMES;
     delay(ADVANCE_MS);
 }
+
+// EXAMPLE-7 if i want to display the data horizontally. means in the half section arrow animation sign will be displayed and in the other half section text data will be displayed
+#include <DMD3.h>
+#include <SoftwareSerial.h>
+#include <SPI.h>
+#include <TimerOne.h>
+#include <font/TimesNewRoman12.h>
+
+const int ledPin = 13;
+DMD3 display;
+
+const byte TX_PIN = 2;
+const byte RX_PIN = 3;
+
+SoftwareSerial Soft_Serial(RX_PIN, TX_PIN);
+
+byte const run1[] PROGMEM = {
+  16, 13,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+};
+
+
+byte const run2[] PROGMEM = {
+  16, 13,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000001,
+  B00000000, B0000001,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+  B00000000, B0000000,
+};
+
+
+byte const run3[] PROGMEM = {
+  16, 13,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000001,
+  B00000000, B00000011,
+  B00000000, B00000011,
+  B00000000, B00000001,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000000,
+};
+
+byte const run4[] PROGMEM = {
+  16, 13,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000001,
+  B00000000, B00000011,
+  B00000000, B00000111,
+  B00000000, B00000111,
+  B00000000, B00000011,
+  B00000000, B00000001,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000000,
+};
+
+byte const run5[] PROGMEM = {
+  16, 13,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000001,
+  B00000000, B00000011,
+  B00000000, B00000111,
+  B00000000, B00001111,
+  B00000000, B00001111,
+  B00000000, B00000111,
+  B00000000, B00000011,
+  B00000000, B00000001,
+  B00000000, B00000000,
+  B00000000, B00000000,
+};
+
+
+byte const run6[] PROGMEM = {
+  16, 13,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000011,
+  B00000000, B00000111,
+  B00000000, B00001111,
+  B00000000, B00011111,
+  B00000000, B00011111,
+  B00000000, B00001111,
+  B00000000, B00000111,
+  B00000000, B00000011,
+  B00000000, B00000000,
+  B00000000, B00000000,
+};
+
+byte const run7[] PROGMEM = {
+  16, 13,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00000000, B00000001,
+  B00000000, B00000111,
+  B00000000, B00001111,
+  B00000000, B00011111,
+  B00000000, B00111111,
+  B00000000, B00111111,
+  B00000000, B00011111,
+  B00000000, B00001111,
+  B00000000, B00000111,
+  B00000000, B00000001,
+  B00000000, B00000000,
+};
+
+byte const run8[] PROGMEM = {
+  16, 13,
+  B00000000, B00000000,
+  B00000000, B00000001,
+  B00000000, B00000011,
+  B00000000, B00001111,
+  B00000000, B00011111,
+  B00000000, B00111111,
+  B00000000, B01111111,
+  B00000000, B01111111,
+  B00000000, B00111111,
+  B00000000, B00011111,
+  B00000000, B00001111,
+  B00000000, B00000011,
+  B00000000, B00000001,
+};
+
+
+byte const run9[] PROGMEM = {
+  16, 13,
+  B00000000, B00000001,
+  B00000000, B00000011,
+  B00000000, B00000111,
+  B00000000, B00011111,
+  B00000000, B00111111,
+  B00000000, B01111111,
+  B00000000, B11111111,
+  B00000000, B11111111,
+  B00000000, B01111111,
+  B00000000, B00111111,
+  B00000000, B00011111,
+  B00000000, B00000111,
+  B00000000, B00000011,
+};
+
+
+byte const run10[] PROGMEM = {
+  16, 13,
+  B00000000, B00000100,
+  B00000000, B00001100,
+  B00000000, B00011100,
+  B00000000, B00111100,
+  B00000000, B01111111,
+  B00000000, B11111111,
+  B00000001, B11111111,
+  B00000001, B11111111,
+  B00000000, B11111100,
+  B00000000, B01111100,
+  B00000000, B00111100,
+  B00000000, B00011100,
+  B00000000, B00001100,
+};
+
+byte const run11[] PROGMEM = {
+  16, 13,
+  B00000000, B00001000,
+  B00000000, B00011000,
+  B00000000, B00111000,
+  B00000000, B01111000,
+  B00000000, B11111111,
+  B00000001, B11111111,
+  B00000011, B11111111,
+  B00000011, B11111111,
+  B00000001, B11111000,
+  B00000000, B11111000,
+  B00000000, B01111000,
+  B00000000, B00111000,
+  B00000000, B00011000,
+};
+
+byte const run12[] PROGMEM = {
+  16, 13,
+  B00000000, B00010000,
+  B00000000, B00110000,
+  B00000000, B01110000,
+  B00000000, B11110000,
+  B00000001, B11111111,
+  B00000011, B11111111,
+  B00000111, B11111111,
+  B00000111, B11111111,
+  B00000011, B11110000,
+  B00000001, B11110000,
+  B00000000, B11110000,
+  B00000000, B01110000,
+  B00000000, B00110000,
+};
+
+byte const run13[] PROGMEM = {
+  16, 13,
+  B00000000, B00100000,
+  B00000000, B01100000,
+  B00000000, B11100000,
+  B00000001, B11100000,
+  B00000011, B11111111,
+  B00000111, B11111111,
+  B00001111, B11111111,
+  B00001111, B11111111,
+  B00000111, B11100000,
+  B00000011, B11100000,
+  B00000001, B11100000,
+  B00000000, B11100000,
+  B00000000, B01100000,
+};
+
+byte const run14[] PROGMEM = {
+  16, 13,
+  B00000000, B01000000,
+  B00000000, B11000000,
+  B00000001, B11000000,
+  B00000011, B11000000,
+  B00000111, B11111111,
+  B00001111, B11111111,
+  B00011111, B11111111,
+  B00011111, B11111111,
+  B00001111, B11000000,
+  B00000111, B11000000,
+  B00000011, B11000000,
+  B00000001, B11000000,
+  B00000000, B11000000,
+};
+
+byte const run15[] PROGMEM = {
+  16, 13,
+  B00000000, B10000000,
+  B00000001, B10000000,
+  B00000011, B10000000,
+  B00000111, B10000000,
+  B00001111, B11111111,
+  B00011111, B11111111,
+  B00111111, B11111111,
+  B00111111, B11111111,
+  B00011111, B10000000,
+  B00001111, B10000000,
+  B00000111, B10000000,
+  B00000011, B10000000,
+  B00000001, B10000000,
+};
+
+byte const run16[] PROGMEM = {
+  16, 13,
+  B00000001, B00000000,
+  B00000011, B00000000,
+  B00000111, B00000000,
+  B00001111, B00000000,
+  B00011111, B11111111,
+  B00111111, B11111111,
+  B01111111, B11111111,
+  B01111111, B11111111,
+  B00111111, B00000000,
+  B00011111, B00000000,
+  B00001111, B00000000,
+  B00000111, B00000000,
+  B00000011, B00000000,
+};
+Bitmap::ProgMem frames[] = {
+    run1,
+    run2,
+    run3,
+    run4,
+    run5,
+    run6,
+    run7,
+    run8,
+    run9,
+    run10,
+    run11,
+    run12,
+    run13,
+    run14,
+    run15,
+    run16,
+};
+
+#define NUM_FRAMES (sizeof(frames) / sizeof(frames[0]))
+unsigned int frame = 0;
+
+#define ADVANCE_MS (1000 / NUM_FRAMES)
+
+unsigned long lastFrameChange = 0;
+int currentVacancy = -1; // Keep track of the current vacancy value
+
+void scan() {
+    display.refresh();
+}
+
+void setup() {
+    Serial.begin(115200);
+    Serial.println("Start...");
+    Soft_Serial.begin(9600);
+    Timer1.initialize(2000);
+    Timer1.attachInterrupt(scan);
+    Timer1.pwm(9, 255);
+}
+
+void loop() {
+    unsigned long currentMillis = millis();
+
+    // Continuously display the arrow
+    if (currentMillis - lastFrameChange >= ADVANCE_MS) {
+        show_arrow(frames[frame]);
+        frame = (frame + 1) % NUM_FRAMES;
+        lastFrameChange = currentMillis;
+    }
+
+    // Check for serial data
+    if (Soft_Serial.available() > 0) {
+        process_serial_data();
+    }
+}
+
+void process_serial_data() {
+    char buffer[8];
+    int bytesRead = Soft_Serial.readBytesUntil('\n', buffer, sizeof(buffer));
+
+    Serial.print("Received raw data: ");
+    Serial.println(buffer);
+
+    // Check if the start and end bytes are correct
+    if (buffer[0] == 'D' && buffer[1] == 'D' && buffer[bytesRead - 2] == 'F' && buffer[bytesRead - 1] == 'F') {
+        // Extract the vacancy data
+        char vacancyCharHigh = buffer[4]; // Extract the high digit
+        char vacancyCharLow = buffer[5];  // Extract the low digit
+        Serial.print(buffer[4]);
+        Serial.print(buffer[5]);
+        int vacancyHigh = vacancyCharHigh - '0';
+        int vacancyLow = vacancyCharLow - '0';
+        int vacancy = vacancyHigh * 10 + vacancyLow;
+        Serial.print("Vacancy: ");
+        Serial.println(vacancy);
+
+        // Update vacancy display if changed
+        if (vacancy != currentVacancy) {
+            currentVacancy = vacancy;
+            show_text(vacancy);
+        }
+    }
+    memset(buffer, 0, sizeof(buffer));
+}
+void show_text(int vacancy) {
+    // Clear the specific area for the text
+    //display.fillRect(0, 0, display.width(), 10, false);
+    display.setFont(TimesNewRoman12); // Use a smaller font
+    char vacancyText[4];
+    sprintf(vacancyText, "%d", vacancy);
+    int x = (display.width() - display.textWidth(vacancyText)) / 2; // Center the text horizontally
+    display.drawText(x-10, 0, vacancyText); // Adjust the position for text
+    display.refresh(); // Refresh the display after drawing text
+}
+
+void show_arrow(const byte* arrow) {
+    // Clear the specific area for the arrow
+    //display.fillRect(0, 10, display.width(), display.height() - 10, false);
+    int x = (display.width() - 32) / 2; // Center the bitmap horizontally
+    display.drawBitmap(x+22, 2, arrow);
+    display.refresh();
+}
+
+/* // this devides the p10 display vertically
+void show_text(int vacancy) {
+    // Clear the specific area for the text
+   // display.fillRect(0, 0, display.width(), 10, false);
+    display.setFont(TimesNewRoman12); // Use a smaller font
+    char vacancyText[4];
+    sprintf(vacancyText, "%d", vacancy);
+    int x = (display.width() - display.textWidth(vacancyText)) / 2; // Center the text horizontally
+    display.drawText(x, 0, vacancyText); // Adjust the position for text
+    display.refresh(); // Refresh the display after drawing text
+}
+
+void show_arrow(const byte* arrow) {
+    // Clear the specific area for the arrow
+    //display.fillRect(0, 10, display.width(), display.height() - 10, false);
+    int x = (display.width() - 16) / 2; // Center the bitmap horizontally
+    display.drawBitmap(x, 10, arrow);
+    display.refresh();
+}
+*/
