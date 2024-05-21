@@ -159,13 +159,16 @@ while True:
 from machine import UART, Pin
 import time
 
+# Initialize UARTs with timeout settings
 uart1 = UART(1, baudrate=9600, tx=Pin(16), rx=Pin(17), timeout=2000)
 uart2 = UART(2, baudrate=9600, tx=Pin(33), rx=Pin(32), timeout=2000)
 
+# Define slave IDs
 slave_ids = [b'\x01', b'\x02', b'\x03']
 num_zones = len(slave_ids)
 
 def crc16(data: bytearray) -> int:
+    """Calculate the CRC-16 of a data bytearray."""
     crc = 0x0000
     for byte in data:
         crc ^= byte << 8
@@ -178,6 +181,7 @@ def crc16(data: bytearray) -> int:
     return crc
 
 def verify_crc(data: bytearray) -> bool:
+    """Verify the CRC of a data bytearray."""
     if len(data) < 3:
         return False
     received_crc = (data[-3] << 8) | data[-2]
@@ -185,16 +189,17 @@ def verify_crc(data: bytearray) -> bool:
     return received_crc == calculated_crc
 
 def clear_uart_buffer(uart):
+    """Clear the UART buffer."""
     while uart.any():
         uart.read(1)
 
 def collect_data_from_slave(slave_id):
+    """Collect data from a specified slave controller."""
     clear_uart_buffer(uart1)
     uart1.write(slave_id)
     print("Request sent to Slave", slave_id.hex())
-    
     time.sleep(2)
-    
+
     response = bytearray()
     start_time = time.time()
     while True:
@@ -220,6 +225,7 @@ def collect_data_from_slave(slave_id):
     return None
 
 def collect_data_from_slaves():
+    """Collect data from all slave controllers and send the consolidated message."""
     all_zone_data = []
     total_engaged = 0
     total_disengaged = 0
@@ -233,13 +239,14 @@ def collect_data_from_slaves():
         if response:
             all_zone_data.append(response)
             if len(response) >= 12:
-                total_engaged += response[-5]
-                total_disengaged += response[-4]
-                total_vacancy += response[-3]
-                total_errors += response[-2]
+                total_engaged += response[-7]
+                total_disengaged += response[-6]
+                total_vacancy += response[-5]
+                total_errors += response[-4]
         
         clear_uart_buffer(uart1)
 
+    # Construct the final message
     message = bytearray([0xDE, 0x01, num_zones])
     for zone_data in all_zone_data:
         message.extend(zone_data)
@@ -252,4 +259,4 @@ def collect_data_from_slaves():
 
 while True:
     collect_data_from_slaves()
-    time.sleep(10)
+    time.sleep(5)
