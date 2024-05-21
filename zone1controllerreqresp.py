@@ -163,6 +163,7 @@ def process_sensor_requests():
             uart1.write(bytes.fromhex(request))
             time.sleep(2)
             response = uart1.read()
+            print(f"Received response: {response}")  # Debug print
             if response and response[0:1] == b'\xF5':
                 sensor_status.append(calculate_sensor_status(response))
 
@@ -174,28 +175,32 @@ def process_sensor_requests():
     total_vacancy = total_disengaged
     message = bytearray([0xAA, int.from_bytes(zone_id, "little"), total_sensors] + sensor_status + [total_engaged, total_disengaged, total_vacancy, total_errors])
 
+    print(f"Message before CRC: {message}")  # Debug print
     # Calculate CRC-16
     crc = crc16(message)
+    print(f"CRC calculated: {crc:04X}")  # Debug print
     message.append(crc >> 8)  # Append high byte of CRC
     message.append(crc & 0xFF)  # Append low byte of CRC
-
-    # Add end marker
     message.append(0x55)
-
-    # Write message to UART2
+    print(f"Final message: {message}")  # Debug print
     uart2.write(message)
-    display = bytearray([0xDD, int.from_bytes(zone_id, "little"), total_vacancy, 0xFF])
-    hex_display = ''.join('{:02x}'.format(byte) for byte in display)
-    print(hex_display.upper())
+    
+    # Convert the final message to a hexadecimal string
+    hex_message = ''.join('{:02x}'.format(byte) for byte in message)
+    print(f"Hex message: {hex_message.upper()}")
+
+    # Display part (uncomment if needed)
+    # display = bytearray([0xDD, int.from_bytes(zone_id, "little"), total_vacancy, 0xFF])
+    # hex_display = ''.join('{:02x}'.format(byte) for byte in display)
+    # print(hex_display.upper())
 
 # Listen for slave ID from the floor controller
 while True:
     if uart2.any():
         received_data = uart2.read()
+        print(f"Received data: {received_data}")  # Debug print
         if received_data:
             slave_id = received_data[0:1]  # Read the first byte as slave ID
             if slave_id == zone_id:
                 process_sensor_requests()
-    time.sleep(0.1)  # Small delay to prevent high CPU usage
-
-
+    time.sleep(0.1)
