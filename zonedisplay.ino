@@ -1042,13 +1042,18 @@ void scan() {
 }
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     Serial.println("Start...");
     Soft_Serial.begin(9600);
     Timer1.initialize(2000);
     Timer1.attachInterrupt(scan);
     Timer1.pwm(9, 255);
 }
+
+
+
+// Placeholder for your Soft_Serial object
+// Define Soft_Serial as needed for your setup
 
 void loop() {
     unsigned long currentMillis = millis();
@@ -1083,33 +1088,36 @@ void process_serial_data() {
         int vacancyHigh = vacancyCharHigh - '0';
         int vacancyLow = vacancyCharLow - '0';
         int vacancy = vacancyHigh * 10 + vacancyLow;
+
         Serial.print("Vacancy: ");
         Serial.println(vacancy);
 
-        // Update vacancy display if changed
-        if (vacancy != currentVacancy) {
+        // Update vacancy display if changed and if vacancy is non-negative
+        if (vacancy >= 0 && vacancy != currentVacancy) {
             currentVacancy = vacancy;
             show_text(vacancy);
         }
     }
     memset(buffer, 0, sizeof(buffer));
 }
+
 void show_text(int vacancy) {
-    // Clear the specific area for the text
-    //display.fillRect(0, 0, display.width(), 10, false);
+    // Clear the entire display before updating
+    display.clear();
     display.setFont(TimesNewRoman12); // Use a smaller font
+
     char vacancyText[4];
     sprintf(vacancyText, "%d", vacancy);
+
     int x = (display.width() - display.textWidth(vacancyText)) / 2; // Center the text horizontally
-    display.drawText(x-10, 0, vacancyText); // Adjust the position for text
+    display.drawText(x - 10, 0, vacancyText); // Adjust the position for text
     display.refresh(); // Refresh the display after drawing text
 }
 
 void show_arrow(const byte* arrow) {
     // Clear the specific area for the arrow
-    //display.fillRect(0, 10, display.width(), display.height() - 10, false);
     int x = (display.width() - 32) / 2; // Center the bitmap horizontally
-    display.drawBitmap(x+22, 2, arrow);
+    display.drawBitmap(x + 22, 2, arrow);
     display.refresh();
 }
 
