@@ -131,7 +131,7 @@ uart = UART(0, 9600, tx=Pin(3), rx=Pin(1))
 uart.init(9600, bits=8, parity=None, stop=1)
 
 sensor_requests = ['FA0101F9', 'FA0201FA', 'FA0301FB']
-zone_id = b'\x03'  # Convert zone_id to a byte
+zone_id = b'\x01'  # Change this for each zone controller (e.g., b'\x02' for zone 2)
 
 def crc16(data: bytearray) -> int:
     crc = 0x0000
@@ -162,9 +162,8 @@ def process_sensor_requests():
     for request in sensor_requests:
         if request.startswith('FA'):
             uart1.write(bytes.fromhex(request))
-            time.sleep(2)
+            time.sleep(0.1)
             response = uart1.read()
-            print(f"Received response: {response}")  # Debug print
             if response and response[0:1] == b'\xF5':
                 sensor_status.append(calculate_sensor_status(response))
 
@@ -175,35 +174,26 @@ def process_sensor_requests():
     total_errors = sensor_status.count(3)
     total_vacancy = total_disengaged
     message = bytearray([0xAA, int.from_bytes(zone_id, "little"), total_sensors] + sensor_status + [total_engaged, total_disengaged, total_vacancy, total_errors])
-
-    print(f"Message before CRC: {message}")  # Debug print
     # Calculate CRC-16
     crc = crc16(message)
-    print(f"CRC calculated: {crc:04X}")  # Debug print
     message.append(crc >> 8)  # Append high byte of CRC
     message.append(crc & 0xFF)  # Append low byte of CRC
     message.append(0x55)
-    print(f"Final message: {message}")  # Debug print
     uart2.write(message)
     
-    # Convert the final message to a hexadecimal string
-    hex_message = ''.join('{:02x}'.format(byte) for byte in message)
-    print(f"Hex message: {hex_message.upper()}")
-
     # Display part (uncomment if needed)
-    # display = bytearray([0xDD, int.from_bytes(zone_id, "little"), total_vacancy, 0xFF])
-    # hex_display = ''.join('{:02x}'.format(byte) for byte in display)
-    # print(hex_display.upper())
+    display = bytearray([0xDD, int.from_bytes(zone_id, "little"), total_vacancy, 0xFF])
+    hex_display = ''.join('{:02x}'.format(byte) for byte in display)
+    print(hex_display.upper())
 
 # Listen for slave ID from the floor controller
 while True:
     if uart2.any():
         received_data = uart2.read()
-        print(f"Received data: {received_data}")  # Debug print
         if received_data:
             slave_id = received_data[0:1]  # Read the first byte as slave ID
             if slave_id == zone_id:
                 process_sensor_requests()
-    time.sleep(2)
+    time.sleep(1)
 
 
