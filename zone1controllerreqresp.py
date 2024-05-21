@@ -203,4 +203,4 @@ while True:
             slave_id = received_data[0:1]  # Read the first byte as slave ID
             if slave_id == zone_id:
                 process_sensor_requests()
-    time.sleep(0.1)
+    time.sleep(2)
