@@ -81,7 +81,7 @@ while True:
     time.sleep(1)
 '''
 
-#in this i am using nand sir display to display the data on the display. 
+#in this i am integrating nand sir RGB display to display the PGS data on the p10 display. and it is completed and working fine.
 from machine import UART, Pin
 import time
 
