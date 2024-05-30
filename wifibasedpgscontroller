@@ -417,4 +417,91 @@ while True:
     time.sleep(1)
 
 //EXAMPLE-5 Master controller
+import espnow
+import network
+import time
+
+# Initialize ESP-NOW
+wlan = network.WLAN(network.STA_IF)
+wlan.active(True)
+esp_now = espnow.ESPNow()
+esp_now.init()
+
+# Define floor IDs and their MAC addresses
+floor_ids = [0x01, 0x02, 0x03]  # Using integers directly for floor IDs
+floor_controller_macs = [
+    b'\xFF\xFF\xFF\xFF\xFF\xFF',  # Replace with actual MAC address of floor controller 1
+    b'\xFF\xFF\xFF\xFF\xFF\xFF',  # Replace with actual MAC address of floor controller 2
+    b'\xFF\xFF\xFF\xFF\xFF\xFF'   # Replace with actual MAC address of floor controller 3
+]
+master_controller_mac = b'\xFF\xFF\xFF\xFF\xFF\xFF'  # Replace with actual MAC address of the master controller
+
+# Add peers for ESP-NOW
+for mac in floor_controller_macs:
+    esp_now.add_peer(mac)
+esp_now.add_peer(master_controller_mac)
+
+num_floors = len(floor_ids)
+
+# Function to send request byte to floor controller
+def send_request_to_floor(floor_id, floor_mac):
+    request_byte = bytearray([0xAA, floor_id, 0x80, 0xA0, 0x55])
+    esp_now.send(floor_mac, request_byte)
+
+# Function to collect data from a single floor
+def collect_data_from_floor(floor_id, floor_mac):
+    send_request_to_floor(floor_id, floor_mac)
+
+    response = bytearray()
+    start_time = time.time()
+    while True:
+        if esp_now.any():
+            peer, msg = esp_now.recv()
+            if peer == floor_mac:
+                response.extend(msg)
+                # Check for start and end of frame markers
+                if response[:1] == b'\xDE' and response[-1:] == b'\xE9':
+                    break
+        if time.time() - start_time > 10:
+            break
+
+    if response:
+        return response  # Return the complete response including end marker
+    return None
+
+# Function to collect and process data from all floors
+def collect_data_from_floors():
+    all_floor_data = []
+    total_engaged = 0
+    total_disengaged = 0
+    total_vacancy = 0
+    total_errors = 0
+
+    for floor_id, floor_mac in zip(floor_ids, floor_controller_macs):
+        response = collect_data_from_floor(floor_id, floor_mac)
+        time.sleep(0.1)
+        if response:
+            all_floor_data.append(response)
+            if len(response) >= 12:
+                total_engaged += response[-5]
+                total_disengaged += response[-4]
+                total_vacancy += response[-3]
+                total_errors += response[-2]
+
+    # Build the final message
+    message = bytearray([0xF4, 0x01, num_floors])
+    for floor_data in all_floor_data:
+        message.extend(floor_data)
+
+    total_data = bytearray([total_engaged, total_disengaged, total_vacancy, total_errors, 0xD1])
+    message.extend(total_data)
+
+    hex_message_with_spaces = ' '.join('{:02x}'.format(byte) for byte in message)
+    print(f"Master Data with spaces: {hex_message_with_spaces.upper()}")
+    esp_now.send(master_controller_mac, message)
+
+# Main loop to collect data periodically
+while True:
+    collect_data_from_floors()
+    time.sleep(1)
 
