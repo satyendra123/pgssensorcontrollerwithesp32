@@ -1,4 +1,5 @@
-//pgs_controller using espnow
+//EXAMPLE-1 zone1 controller which receive the request command through the floor controller through wireless using espnow. and when it recive the request then it send the request to the sensors and capture the response from then. and after that 
+// it will send the display data and the floor data worelessly using espnow
 from machine import UART, Pin
 import time
 import espnow
