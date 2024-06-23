@@ -1,4 +1,5 @@
-#
+#ye maine pgs ka sensor banaya hai khud ke liye. jisme maine esp32 ka use kiya hai. isme jo sensor hai wo apna status send krega response ke taur par jaise hi ise request bytes milenge. AA address 03 dd agar hum ye request krte
+#hai jha 03 means code for status so hume response milta hai AA 02 01 dd, where 02 is the sensor address and 01 is the sensor status. 01 means engaged and 00 means disengaged. also we can read the address and set the distance dynamically from the IR remote
 from machine import Pin, UART
 import time
 import ir_rx.nec as nec
