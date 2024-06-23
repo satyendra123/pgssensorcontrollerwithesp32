@@ -1,0 +1,96 @@
+#
+from machine import Pin, UART
+import time
+import ir_rx.nec as nec
+
+# Ultrasonic sensor pins
+trigger_pin = Pin(4, Pin.OUT)
+echo_pin = Pin(5, Pin.IN)
+
+# LED pins
+red_led = Pin(18, Pin.OUT)
+green_led = Pin(19, Pin.OUT)
+
+# RS485 UART setup
+uart = UART(2, baudrate=9600, tx=17, rx=16)
+enable_pin = Pin(21, Pin.OUT)
+
+# IR receiver pin
+ir_pin = Pin(22, Pin.IN)
+
+# Default distance threshold (in cm) and sensor address
+distance_threshold = 10
+sensor_address = 0x01
+
+# Function to measure distance using the ultrasonic sensor
+def measure_distance():
+    trigger_pin.off()
+    time.sleep_us(2)
+    trigger_pin.on()
+    time.sleep_us(10)
+    trigger_pin.off()
+
+    while echo_pin.value() == 0:
+        pass
+    start = time.ticks_us()
+
+    while echo_pin.value() == 1:
+        pass
+    end = time.ticks_us()
+
+    duration = time.ticks_diff(end, start)
+    distance = (duration / 2) / 29.1  # Convert to cm
+
+    return distance
+
+# Function to check sensor status (engaged or disengaged)
+def check_status():
+    distance = measure_distance()
+    if distance < distance_threshold:
+        red_led.on()
+        green_led.off()
+        return 1  # Engaged
+    else:
+        red_led.off()
+        green_led.on()
+        return 0  # Disengaged
+
+# RS485 communication
+def rs485_send(data):
+    enable_pin.on()  # Enable transmission
+    uart.write(data)
+    time.sleep_ms(10)  # Ensure data is sent
+    enable_pin.off()  # Disable transmission
+
+def rs485_receive():
+    enable_pin.off()  # Enable reception
+    if uart.any():
+        return uart.read()
+    return None
+
+# Function to handle IR remote signals
+def ir_callback(data, addr, ext):
+    global distance_threshold, sensor_address
+    if data == 0xFFA25D:  # Example button code to increase threshold
+        distance_threshold += 1
+    elif data == 0xFFE21D:  # Example button code to decrease threshold
+        distance_threshold -= 1
+    elif data == 0xFF22DD:  # Example button code to increase sensor address
+        sensor_address += 1
+    elif data == 0xFF02FD:  # Example button code to decrease sensor address
+        sensor_address -= 1
+    print("Distance threshold set to:", distance_threshold)
+    print("Sensor address set to:", sensor_address)
+
+# Set up the IR receiver
+ir = nec.IR(ir_pin, ir_callback)
+
+# Main loop
+while True:
+    received_data = rs485_receive()
+    if received_data:
+        if received_data[0] == 0xAA and received_data[1] == sensor_address and received_data[2] == 0x03:
+            status = check_status()
+            response = bytes([0xAA, sensor_address, 0x00, status])
+            rs485_send(response)
+    time.sleep_ms(100)
