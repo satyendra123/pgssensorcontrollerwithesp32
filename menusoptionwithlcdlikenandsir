@@ -1,0 +1,74 @@
+# i have also make a micropython code so that with the help of buttons user can enter the dynamic data so that we need not to change into the code again and again
+from machine import Pin
+import time
+import json
+
+# Define static data
+data = {
+    "zone_address": "00",
+    "total_sensors": 00,
+    "device_id": "00"
+}
+
+# Define menu options
+menu_options = ["zone_address", "total_sensors", "device_id"]
+
+# Initialize menu state
+current_index = 0
+
+# Button pins
+button_menu = Pin(2, Pin.IN, Pin.PULL_UP)
+button_up = Pin(0, Pin.IN, Pin.PULL_UP)
+button_down = Pin(4, Pin.IN, Pin.PULL_UP)
+button_ok = Pin(5, Pin.IN, Pin.PULL_UP)
+
+# Button debounce delay
+debounce_delay = 50
+
+# Menu navigation functions
+def next_option():
+    global current_index
+    current_index = (current_index + 1) % len(menu_options)
+
+def prev_option():
+    global current_index
+    current_index = (current_index - 1) % len(menu_options)
+
+def display_menu():
+    print("Current Index Menu:", current_index)
+    print("Option:", menu_options[current_index])
+    print("Value:", data[menu_options[current_index]])
+
+# Main menu loop
+while True:
+    # Display current menu option
+    display_menu()
+    time.sleep(0.1)  # Wait for stability
+
+    # Check button presses
+    if not button_menu.value():
+        time.sleep_ms(debounce_delay)
+        if not button_menu.value():  # Button is pressed
+            break  # Exit the menu
+
+    if not button_up.value():
+        time.sleep_ms(debounce_delay)
+        if not button_up.value():  # Button is pressed
+            next_option()
+
+    if not button_down.value():
+        time.sleep_ms(debounce_delay)
+        if not button_down.value():  # Button is pressed
+            prev_option()
+
+    if not button_ok.value():
+        time.sleep_ms(debounce_delay)
+        if not button_ok.value():  # Button is pressed
+            with open("data.txt", "w") as f:
+                f.write(f"{menu_options[current_index]}: {data[menu_options[current_index]]}\n")
+            print("Data stored in data.txt")
+
+    time.sleep(0.1)  # Small delay to debounce buttons
+
+print("Exiting menu")
+
