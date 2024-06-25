@@ -3,72 +3,243 @@ from machine import Pin
 import time
 import json
 
-# Define static data
-data = {
-    "zone_address": "00",
-    "total_sensors": 00,
-    "device_id": "00"
-}
-
-# Define menu options
-menu_options = ["zone_address", "total_sensors", "device_id"]
-
-# Initialize menu state
-current_index = 0
-
-# Button pins
+# Define GPIO pins for the buttons
 button_menu = Pin(2, Pin.IN, Pin.PULL_UP)
 button_up = Pin(0, Pin.IN, Pin.PULL_UP)
 button_down = Pin(4, Pin.IN, Pin.PULL_UP)
 button_ok = Pin(5, Pin.IN, Pin.PULL_UP)
 
-# Button debounce delay
-debounce_delay = 50
+# Define menu options
+menu = ["zone_address", "total_sensor", "device_id"]
 
-# Menu navigation functions
-def next_option():
-    global current_index
-    current_index = (current_index + 1) % len(menu_options)
+# Initialize data
+data = {
+    "zone_address": "01",
+    "total_sensor": 10,
+    "device_id": "XYZ"
+}
 
-def prev_option():
-    global current_index
-    current_index = (current_index - 1) % len(menu_options)
+# Initialize menu state
+current_menu_index = 0
+menu_active = False
+setting_data = False
 
-def display_menu():
-    print("Current Index Menu:", current_index)
-    print("Option:", menu_options[current_index])
-    print("Value:", data[menu_options[current_index]])
+# Load and save data functions
+def save_data():
+    with open('data.txt', 'w') as f:
+        json.dump(data, f)
+
+def load_data():
+    global data
+    try:
+        with open('data.txt', 'r') as f:
+            data = json.load(f)
+    except OSError:
+        save_data()  # Create the file if it doesn't exist
+
+def print_current_menu(index):
+    option = menu[index]
+    value = data[option]
+    print(f"Current Menu: {option} (Value: {value})")
+
+def button_pressed(pin):
+    return not pin.value()
+
+# Load data at startup
+load_data()
 
 # Main menu loop
 while True:
-    # Display current menu option
-    display_menu()
-    time.sleep(0.1)  # Wait for stability
+    if button_pressed(button_menu):
+        if menu_active:
+            menu_active = False
+            setting_data = False
+            print("Exited Menu.")
+        else:
+            menu_active = True
+            print_current_menu(current_menu_index)
+        time.sleep(0.3)  # Debounce delay
+        
+    if menu_active:
+        if button_pressed(button_up):
+            if setting_data:
+                if menu[current_menu_index] == "total_sensor":
+                    data["total_sensor"] += 1
+                elif menu[current_menu_index] == "zone_address":
+                    current_value = int(data["zone_address"])
+                    data["zone_address"] = str((current_value + 1) % 100).zfill(2)
+                elif menu[current_menu_index] == "device_id":
+                    current_value = data["device_id"]
+                    data["device_id"] = chr((ord(current_value) + 1 - 65) % 26 + 65)
+                print_current_menu(current_menu_index)
+            else:
+                current_menu_index = (current_menu_index + 1) % len(menu)
+                print_current_menu(current_menu_index)
+            time.sleep(0.3)  # Debounce delay
 
-    # Check button presses
-    if not button_menu.value():
-        time.sleep_ms(debounce_delay)
-        if not button_menu.value():  # Button is pressed
-            break  # Exit the menu
+        elif button_pressed(button_down):
+            if setting_data:
+                if menu[current_menu_index] == "total_sensor":
+                    data["total_sensor"] = max(0, data["total_sensor"] - 1)
+                elif menu[current_menu_index] == "zone_address":
+                    current_value = int(data["zone_address"])
+                    data["zone_address"] = str((current_value - 1) % 100).zfill(2)
+                elif menu[current_menu_index] == "device_id":
+                    current_value = data["device_id"]
+                    data["device_id"] = chr((ord(current_value) - 1 - 65) % 26 + 65)
+                print_current_menu(current_menu_index)
+            else:
+                current_menu_index = (current_menu_index - 1) % len(menu)
+                print_current_menu(current_menu_index)
+            time.sleep(0.3)  # Debounce delay
 
-    if not button_up.value():
-        time.sleep_ms(debounce_delay)
-        if not button_up.value():  # Button is pressed
-            next_option()
+        elif button_pressed(button_ok):
+            if setting_data:
+                setting_data = False
+                save_data()
+                print("Data saved.")
+            else:
+                setting_data = True
+                print(f"Editing: {menu[current_menu_index]}")
+            time.sleep(0.3)  # Debounce delay
+#EXAMPLE-2 this is the arduino code for this
+cpp
+Copy code
+#include <EEPROM.h>
 
-    if not button_down.value():
-        time.sleep_ms(debounce_delay)
-        if not button_down.value():  # Button is pressed
-            prev_option()
+// Define GPIO pins for the buttons
+const int button_menu = 2;
+const int button_up = 3;
+const int button_down = 4;
+const int button_ok = 5;
 
-    if not button_ok.value():
-        time.sleep_ms(debounce_delay)
-        if not button_ok.value():  # Button is pressed
-            with open("data.txt", "w") as f:
-                f.write(f"{menu_options[current_index]}: {data[menu_options[current_index]]}\n")
-            print("Data stored in data.txt")
+// Define menu options
+String menu[] = {"zone_address", "total_sensor", "device_id"};
 
-    time.sleep(0.1)  # Small delay to debounce buttons
+// Initialize data
+struct Data {
+  char zone_address[3];
+  int total_sensor;
+  char device_id[4];
+};
 
-print("Exiting menu")
+Data data = {"01", 10, "XYZ"};
 
+// Initialize menu state
+int current_menu_index = 0;
+bool menu_active = false;
+bool setting_data = false;
+
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 300;  // Debounce delay in milliseconds
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(button_menu, INPUT_PULLUP);
+  pinMode(button_up, INPUT_PULLUP);
+  pinMode(button_down, INPUT_PULLUP);
+  pinMode(button_ok, INPUT_PULLUP);
+
+  load_data();
+}
+
+void loop() {
+  if (button_pressed(button_menu)) {
+    if (menu_active) {
+      menu_active = false;
+      setting_data = false;
+      Serial.println("Exited Menu.");
+    } else {
+      menu_active = true;
+      print_current_menu(current_menu_index);
+    }
+    delay(debounceDelay);  // Debounce delay
+  }
+
+  if (menu_active) {
+    if (button_pressed(button_up)) {
+      if (setting_data) {
+        if (menu[current_menu_index] == "total_sensor") {
+          data.total_sensor++;
+        } else if (menu[current_menu_index] == "zone_address") {
+          int current_value = atoi(data.zone_address);
+          sprintf(data.zone_address, "%02d", (current_value + 1) % 100);
+        } else if (menu[current_menu_index] == "device_id") {
+          data.device_id[0] = (data.device_id[0] - 'A' + 1) % 26 + 'A';
+        }
+        print_current_menu(current_menu_index);
+      } else {
+        current_menu_index = (current_menu_index + 1) % (sizeof(menu) / sizeof(menu[0]));
+        print_current_menu(current_menu_index);
+      }
+      delay(debounceDelay);  // Debounce delay
+    }
+
+    if (button_pressed(button_down)) {
+      if (setting_data) {
+        if (menu[current_menu_index] == "total_sensor") {
+          data.total_sensor = max(0, data.total_sensor - 1);
+        } else if (menu[current_menu_index] == "zone_address") {
+          int current_value = atoi(data.zone_address);
+          sprintf(data.zone_address, "%02d", (current_value - 1 + 100) % 100);
+        } else if (menu[current_menu_index] == "device_id") {
+          data.device_id[0] = (data.device_id[0] - 'A' - 1 + 26) % 26 + 'A';
+        }
+        print_current_menu(current_menu_index);
+      } else {
+        current_menu_index = (current_menu_index - 1 + (sizeof(menu) / sizeof(menu[0]))) % (sizeof(menu) / sizeof(menu[0]));
+        print_current_menu(current_menu_index);
+      }
+      delay(debounceDelay);  // Debounce delay
+    }
+
+    if (button_pressed(button_ok)) {
+      if (setting_data) {
+        setting_data = false;
+        save_data();
+        Serial.println("Data saved.");
+      } else {
+        setting_data = true;
+        Serial.print("Editing: ");
+        Serial.println(menu[current_menu_index]);
+      }
+      delay(debounceDelay);  // Debounce delay
+    }
+  }
+}
+
+bool button_pressed(int pin) {
+  return digitalRead(pin) == LOW;
+}
+
+void print_current_menu(int index) {
+  String option = menu[index];
+  if (option == "zone_address") {
+    Serial.print("Current Menu: ");
+    Serial.print(option);
+    Serial.print(" (Value: ");
+    Serial.print(data.zone_address);
+    Serial.println(")");
+  } else if (option == "total_sensor") {
+    Serial.print("Current Menu: ");
+    Serial.print(option);
+    Serial.print(" (Value: ");
+    Serial.print(data.total_sensor);
+    Serial.println(")");
+  } else if (option == "device_id") {
+    Serial.print("Current Menu: ");
+    Serial.print(option);
+    Serial.print(" (Value: ");
+    Serial.print(data.device_id);
+    Serial.println(")");
+  }
+}
+
+void save_data() {
+  EEPROM.put(0, data);
+}
+
+void load_data() {
+  EEPROM.get(0, data);
+}
