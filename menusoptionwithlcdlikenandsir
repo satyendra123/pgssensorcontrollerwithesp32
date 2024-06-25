@@ -352,6 +352,3 @@ while True:
                 setting_data = True
                 print(f"Editing: {menu[current_menu_index]}")
             time.sleep(0.3)  # Debounce delay
-
-
-#EXAMPLE-4 
