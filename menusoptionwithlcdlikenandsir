@@ -243,3 +243,115 @@ void save_data() {
 void load_data() {
   EEPROM.get(0, data);
 }
+
+#EXAMPLE-3 lets suppose i have 5 servo motors and i want to enter the servo motors angles data with the help of buttons.so how would i do that and the values will be stored in the .txt file
+from machine import Pin, PWM
+import time
+import json
+
+# Define GPIO pins for the buttons
+button_menu = Pin(2, Pin.IN, Pin.PULL_UP)
+button_up = Pin(0, Pin.IN, Pin.PULL_UP)
+button_down = Pin(4, Pin.IN, Pin.PULL_UP)
+button_ok = Pin(5, Pin.IN, Pin.PULL_UP)
+
+# Define GPIO pins for the servos
+servo_pins = [Pin(12), Pin(14), Pin(27), Pin(26), Pin(25)]
+servos = [PWM(pin, freq=50) for pin in servo_pins]
+
+# Define menu options
+menu = ["Servo 1", "Servo 2", "Servo 3", "Servo 4", "Servo 5"]
+
+# Initialize servo angles
+data = {
+    "Servo 1": 0,
+    "Servo 2": 0,
+    "Servo 3": 0,
+    "Servo 4": 0,
+    "Servo 5": 0
+}
+
+# Initialize menu state
+current_menu_index = 0
+menu_active = False
+setting_data = False
+
+# Load and save data functions
+def save_data():
+    with open('servo_angles.txt', 'w') as f:
+        json.dump(data, f)
+
+def load_data():
+    global data
+    try:
+        with open('servo_angles.txt', 'r') as f:
+            data = json.load(f)
+    except OSError:
+        save_data()  # Create the file if it doesn't exist
+
+def set_servo_angle(servo, angle):
+    duty = int((angle / 180) * 1023) + 26
+    servo.duty(duty)
+
+def print_current_menu(index):
+    option = menu[index]
+    value = data[option]
+    print(f"Current Menu: {option} (Angle: {value}°)")
+
+def button_pressed(pin):
+    return not pin.value()
+
+# Load data at startup
+load_data()
+
+# Set initial servo angles
+for i, servo in enumerate(servos):
+    set_servo_angle(servo, data[menu[i]])
+
+# Main menu loop
+while True:
+    if button_pressed(button_menu):
+        if menu_active:
+            menu_active = False
+            setting_data = False
+            print("Exited Menu.")
+        else:
+            menu_active = True
+            print_current_menu(current_menu_index)
+        time.sleep(0.3)  # Debounce delay
+
+    if menu_active:
+        if button_pressed(button_up):
+            if setting_data:
+                option = menu[current_menu_index]
+                data[option] = min(180, data[option] + 1)
+                set_servo_angle(servos[current_menu_index], data[option])
+                print_current_menu(current_menu_index)
+            else:
+                current_menu_index = (current_menu_index + 1) % len(menu)
+                print_current_menu(current_menu_index)
+            time.sleep(0.3)  # Debounce delay
+
+        if button_pressed(button_down):
+            if setting_data:
+                option = menu[current_menu_index]
+                data[option] = max(0, data[option] - 1)
+                set_servo_angle(servos[current_menu_index], data[option])
+                print_current_menu(current_menu_index)
+            else:
+                current_menu_index = (current_menu_index - 1) % len(menu)
+                print_current_menu(current_menu_index)
+            time.sleep(0.3)  # Debounce delay
+
+        if button_pressed(button_ok):
+            if setting_data:
+                setting_data = False
+                save_data()
+                print("Angle saved.")
+            else:
+                setting_data = True
+                print(f"Editing: {menu[current_menu_index]}")
+            time.sleep(0.3)  # Debounce delay
+
+
+#EXAMPLE-4 
