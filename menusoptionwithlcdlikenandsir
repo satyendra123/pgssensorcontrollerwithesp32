@@ -353,7 +353,7 @@ while True:
                 print(f"Editing: {menu[current_menu_index]}")
             time.sleep(0.3)  # Debounce delay
 
-#EXAMPLE-4 with the lcd
+#EXAMPLE-4 with the lcd servo motor and menu option.
 from machine import Pin, PWM, I2C
 import time
 import json
