@@ -1,4 +1,4 @@
-#EXA<PLE-1 this code is working fine
+#EXAMPLE-1 this code is working fine. i have extract the each and every data from this protocol.
 import re
 
 def extract_data(data):
