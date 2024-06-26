@@ -1,0 +1,186 @@
+#EXA<PLE-1 this code is working fine
+import re
+
+def extract_data(data):
+    # Define a regular expression pattern to match the components of the data string
+    pattern = r'\|([A-Z])\|(\d+)\|([48])\|\d\|(\d+)-(\d+)-#([a-zA-Z])#([a-zA-Z])(\d+)\|'
+    match = re.match(pattern, data)
+    
+    if not match:
+        raise ValueError("Data format is incorrect")
+
+    # Extract the matched groups
+    start_byte = match.group(1)
+    ID = int(match.group(2))
+    data_type = 'temporary' if match.group(3) == '4' else 'permanent'
+    x_axis = int(match.group(4))
+    y_axis = int(match.group(5))
+    arrow = match.group(6)
+    color = match.group(7)
+    display_data = int(match.group(8))
+
+    # Map arrow and color to their descriptions
+    arrow_map = {'u': 'up', 'd': 'down', 'l': 'left', 'r': 'right'}
+    color_map = {'R': 'red', 'G': 'green', 'B': 'blue', 'Y': 'yellow'}
+
+    arrow_description = arrow_map.get(arrow, 'unknown')
+    color_description = color_map.get(color, 'unknown')
+
+    return {
+        'start_byte': start_byte,
+        'ID': ID,
+        'data_type': data_type,
+        'x_axis': x_axis,
+        'y_axis': y_axis,
+        'arrow': arrow_description,
+        'color': color_description,
+        'display_data': display_data
+    }
+
+# Test the function with the provided data string
+data = "|C|1|8|1|28-0-#u#R96|"
+result = extract_data(data)
+print(result)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+#EXAMPLE-1
+def parse_received_data(data):
+    if data.startswith("|C|"):
+        # Parse the received ASCII protocol data
+        parts = data.split('|')
+        print(parts)
+        if len(parts) >= 6:
+            message_length = int(parts[3])
+            temp_data = parts[4]
+            coordinates = parts[5].split('-')
+            print(coordinates)
+            # Extract X and Y coordinates
+            x_pos = int(coordinates[0])
+            y_pos = int(coordinates[1])
+
+            # Print received data
+            print("ID:", temp_data)
+
+            # Determine if the message is temporary or permanent
+            if message_length == 4:
+                print("Type: Temporary")
+            elif message_length == 8:
+                print("Type: Permanent")
+            else:
+                print("Type: Unknown")
+
+            # Initialize variables to store arrow direction and color
+            arrow_direction = None
+            color = None
+
+            # Flags to indicate whether we are currently processing arrow direction or color
+            processing_arrow = False
+            processing_color = False
+
+            # Extract arrow direction and color
+            for symbol in temp_data:
+                if symbol == '#':
+                    if not processing_arrow:
+                        processing_arrow = True
+                    else:
+                        processing_arrow = False
+                        processing_color = True
+                    continue  # Skip the '#' character
+                elif processing_arrow:
+                    arrow_direction = symbol
+                    print("Arrow Direction:", arrow_direction)
+                elif processing_color:
+                    color = symbol
+                    print("Color:", color)
+
+            # Print coordinates
+            print("X Position:", x_pos)
+            print("Y Position:", y_pos)
+
+# Test the function
+data = "|C|1|4|1|28-0-#u#R|97|"
+parse_received_data(data)
+'''
+
+#EXAMPLE-2
+'''
+def extract_data_from_string(data):
+    parts = data.split('|')
+    message_length = int(parts[3])
+    temp_data = parts[4]
+    coordinates = parts[5].split('-')
+    x_pos = int(coordinates[0])
+    y_pos = int(coordinates[1])
+
+    # Determine arrow direction and color
+    arrow_direction = None
+    color = None
+    for symbol in temp_data:
+        if symbol == '#':
+            arrow_direction = temp_data[temp_data.index('#') + 1]  # Get the character after '#' as arrow direction
+            color = temp_data[temp_data.index('#') + 3]  # Get the character two positions after '#' as color
+            break
+
+    return x_pos, y_pos, temp_data, message_length, arrow_direction, color
+
+# Test the function
+data = "|C|1|4|1|28-0-#u#R|97|"
+x_pos, y_pos, temp_data, message_length, arrow_direction, color = extract_data_from_string(data)
+print("X Position:", x_pos)
+print("Y Position:", y_pos)
+print("Temporary Data:", temp_data)
+print("Message Length:", message_length)
+print("Arrow Direction:", arrow_direction)
+print("Color:", color)
+'''
+
+def extract_data_from_string(data):
+    parts = data.split('|')
+    message_length = int(parts[3])
+    temp_data = parts[4]
+    coordinates = parts[5].split('-')
+    x_pos = int(coordinates[0])
+    y_pos = int(coordinates[1])
+
+    # Initialize arrow direction and color
+    arrow_direction = None
+    color = None
+
+    # Find the first occurrence of '#'
+    first_hash_index = temp_data.find('#')
+    if first_hash_index != -1:
+        # Extract arrow direction
+        arrow_direction = temp_data[first_hash_index + 1]
+
+        # Find the next occurrence of '#' after the arrow direction
+        second_hash_index = temp_data.find('#', first_hash_index + 1)
+        if second_hash_index != -1:
+            # Extract color
+            color = temp_data[second_hash_index + 1]
+
+    return x_pos, y_pos, temp_data, message_length, arrow_direction, color
+
+# Test the function
+data = "|C|1|4|1|28-0-#u#R|97|"
+x_pos, y_pos, temp_data, message_length, arrow_direction, color = extract_data_from_string(data)
+print("X Position:", x_pos)
+print("Y Position:", y_pos)
+print("Temporary Data:", temp_data)
+print("Message Length:", message_length)
+print("Arrow Direction:", arrow_direction)
+print("Color:", color)
