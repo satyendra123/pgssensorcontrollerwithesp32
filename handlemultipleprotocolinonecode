@@ -1,0 +1,85 @@
+#EXAMPLE-1 i am trying to make one code which can handle the multiple protocols like it will handle |C|1|8|1|28-0-#u#R96| this protocol for sending the data, |C|1|6| for clear the screen, |S|idE for setting the id, |F|0E for shifting the character. all these protocols will be handled in one code only
+
+
+import machine
+import ubinascii
+import re
+from machine import UART, Pin
+import ujson as json
+
+# Setup UART
+uart = UART(2, baudrate=9600, tx=17, rx=16)
+
+# Simulated NVS storage for storing device ID
+nvs = {}  # Replace this with actual NVS handling code
+
+# Function to extract data from the protocol string
+def extract_data(data):
+    pattern = r'\|([A-Z])\|(\d+)\|([48])\|\d\|(\d+)-(\d+)-#([a-zA-Z])#([a-zA-Z])(\d+)\|'
+    match = re.match(pattern, data)
+    
+    if not match:
+        raise ValueError("Data format is incorrect")
+
+    start_byte = match.group(1)
+    ID = int(match.group(2))
+    data_type = 'temporary' if match.group(3) == '4' else 'permanent'
+    x_axis = int(match.group(4))
+    y_axis = int(match.group(5))
+    arrow = match.group(6)
+    color = match.group(7)
+    display_data = int(match.group(8))
+
+    arrow_map = {'u': 'up', 'd': 'down', 'l': 'left', 'r': 'right'}
+    color_map = {'R': 'red', 'G': 'green', 'B': 'blue', 'Y': 'yellow'}
+
+    arrow_description = arrow_map.get(arrow, 'unknown')
+    color_description = color_map.get(color, 'unknown')
+
+    return {
+        'start_byte': start_byte,
+        'ID': ID,
+        'data_type': data_type,
+        'x_axis': x_axis,
+        'y_axis': y_axis,
+        'arrow': arrow_description,
+        'color': color_description,
+        'display_data': display_data
+    }
+
+# Function to handle the protocols
+def handle_protocol(data):
+    if data.startswith('|S|'):
+        # Set ID protocol
+        parts = data.split('|')
+        if len(parts) >= 3:
+            device_id = parts[2]
+            nvs['device_id'] = device_id  # Simulate storing in NVS
+            print(f"Device ID set to {device_id}")
+    
+    elif data.startswith('|C|'):
+        # Extract and handle display data
+        try:
+            result = extract_data(data)
+            print("Extracted Data:", result)
+        except ValueError as e:
+            print("Error:", e)
+    
+    elif data.startswith('|F|'):
+        # Clear data protocol
+        parts = data.split('|')
+        if len(parts) >= 3:
+            command_id = parts[2]
+            if command_id == '6':
+                # Perform clear data action
+                print("Clear data command received.")
+    
+    else:
+        print("Unknown protocol")
+
+# Main loop to read and process UART data
+while True:
+    if uart.any():
+        data = uart.read().decode('utf-8').strip()
+        print("Received data:", data)
+        handle_protocol(data)
