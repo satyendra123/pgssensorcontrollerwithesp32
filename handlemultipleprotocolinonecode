@@ -1,5 +1,5 @@
 #EXAMPLE-1 i am trying to make one code which can handle the multiple protocols like it will handle |C|1|8|1|28-0-#u#R96| this protocol for sending the data, |C|1|6| for clear the screen, |S|idE for setting the id, |F|0E for shifting the character. all these protocols will be handled in one code only
-
+# without the display i will test this code with my esp32 by sending the protocol through the docklight and check whether it is working or not
 
 import machine
 import ubinascii
