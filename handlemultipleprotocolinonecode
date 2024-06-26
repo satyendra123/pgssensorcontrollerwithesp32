@@ -58,12 +58,17 @@ def handle_protocol(data):
             print(f"Device ID set to {device_id}")
     
     elif data.startswith('|C|'):
-        # Extract and handle display data
-        try:
-            result = extract_data(data)
-            print("Extracted Data:", result)
-        except ValueError as e:
-            print("Error:", e)
+        # Check for clear screen command
+        if data == '|C|1|6|':
+            print("Clear screen command received.")
+            clear_screen()  # Implement this function to clear the screen
+        else:
+            # Extract and handle display data
+            try:
+                result = extract_data(data)
+                print("Extracted Data:", result)
+            except ValueError as e:
+                print("Error:", e)
     
     elif data.startswith('|F|'):
         # Clear data protocol
@@ -76,6 +81,11 @@ def handle_protocol(data):
     
     else:
         print("Unknown protocol")
+
+# Function to clear the screen
+def clear_screen():
+    # Implement the actual screen clearing code here
+    print("Screen cleared.")
 
 # Main loop to read and process UART data
 while True:
