@@ -93,3 +93,119 @@ while True:
         data = uart.read().decode('utf-8').strip()
         print("Received data:", data)
         handle_protocol(data)
+
+#EXAMPLE-2 same code is written for the esp32 in arduino
+#include <Arduino.h>
+#include <HardwareSerial.h>
+#include <Preferences.h>
+#include <regex>
+
+HardwareSerial Serial2(2);
+Preferences preferences;
+
+void setup() {
+  Serial.begin(9600);
+  Serial2.begin(9600, SERIAL_8N1, 16, 17);
+  preferences.begin("storage", false);
+}
+
+// Function to extract data from the protocol string
+void extractData(String data) {
+  std::regex pattern(R"(\|([A-Z])\|(\d+)\|([48])\|\d\|(\d+)-(\d+)-#([a-zA-Z])#([a-zA-Z])(\d+)\|)");
+  std::smatch match;
+
+  std::string s_data = data.c_str();
+  if (!std::regex_search(s_data, match, pattern)) {
+    Serial.println("Data format is incorrect");
+    return;
+  }
+
+  char start_byte = match.str(1)[0];
+  int ID = std::stoi(match.str(2));
+  String data_type = (match.str(3) == "4") ? "temporary" : "permanent";
+  int x_axis = std::stoi(match.str(4));
+  int y_axis = std::stoi(match.str(5));
+  char arrow = match.str(6)[0];
+  char color = match.str(7)[0];
+  int display_data = std::stoi(match.str(8));
+
+  String arrow_description;
+  switch (arrow) {
+    case 'u': arrow_description = "up"; break;
+    case 'd': arrow_description = "down"; break;
+    case 'l': arrow_description = "left"; break;
+    case 'r': arrow_description = "right"; break;
+    default: arrow_description = "unknown"; break;
+  }
+
+  String color_description;
+  switch (color) {
+    case 'R': color_description = "red"; break;
+    case 'G': color_description = "green"; break;
+    case 'B': color_description = "blue"; break;
+    case 'Y': color_description = "yellow"; break;
+    default: color_description = "unknown"; break;
+  }
+
+  Serial.println("Extracted Data:");
+  Serial.println("Start Byte: " + String(start_byte));
+  Serial.println("ID: " + String(ID));
+  Serial.println("Data Type: " + data_type);
+  Serial.println("X Axis: " + String(x_axis));
+  Serial.println("Y Axis: " + String(y_axis));
+  Serial.println("Arrow: " + arrow_description);
+  Serial.println("Color: " + color_description);
+  Serial.println("Display Data: " + String(display_data));
+}
+
+// Function to handle the protocols
+void handleProtocol(String data) {
+  if (data.startsWith("|S|")) {
+    // Set ID protocol
+    int startIdx = data.indexOf('|', 3);
+    if (startIdx != -1) {
+      String device_id = data.substring(3, startIdx);
+      preferences.putString("device_id", device_id);
+      Serial.println("Device ID set to " + device_id);
+    }
+  } else if (data.startsWith("|C|")) {
+    // Check for clear screen command
+    if (data == "|C|1|6|") {
+      Serial.println("Clear screen command received.");
+      clearScreen();
+    } else {
+      // Extract and handle display data
+      try {
+        extractData(data);
+      } catch (const std::exception &e) {
+        Serial.println("Error: " + String(e.what()));
+      }
+    }
+  } else if (data.startsWith("|F|")) {
+    // Clear data protocol
+    int startIdx = data.indexOf('|', 3);
+    if (startIdx != -1) {
+      String command_id = data.substring(3, startIdx);
+      if (command_id == "6") {
+        Serial.println("Clear data command received.");
+      }
+    }
+  } else {
+    Serial.println("Unknown protocol");
+  }
+}
+
+// Function to clear the screen
+void clearScreen() {
+  // Implement the actual screen clearing code here
+  Serial.println("Screen cleared.");
+}
+
+void loop() {
+  if (Serial2.available()) {
+    String data = Serial2.readStringUntil('\n');
+    data.trim();
+    Serial.println("Received data: " + data);
+    handleProtocol(data);
+  }
+}
